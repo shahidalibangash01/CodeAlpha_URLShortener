@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>URL Shortener</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: #0d0d0d;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .bg-glow {
+    position: fixed;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .glow1 { background: #6c63ff; top: -100px; left: -100px; }
+  .glow2 { background: #00d4ff; bottom: -100px; right: -100px; }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 620px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(108, 99, 255, 0.15);
+    border: 1px solid rgba(108, 99, 255, 0.3);
+    border-radius: 50px;
+    padding: 8px 20px;
+    margin-bottom: 1.5rem;
+  }
+
+  .logo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #6c63ff;
+    box-shadow: 0 0 8px #6c63ff;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .logo span { font-size: 13px; color: #a89fff; letter-spacing: 0.5px; }
+
+  h1 {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+  }
+
+  h1 span {
+    background: linear-gradient(135deg, #6c63ff, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 2rem;
+    backdrop-filter: blur(20px);
+    margin-bottom: 1.5rem;
+  }
+
+  .input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 0.95rem;
+    color: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]::placeholder { color: #444; }
+  input[type="text"]:focus { border-color: rgba(108, 99, 255, 0.5); }
+
+  .btn-shorten {
+    background: linear-gradient(135deg, #6c63ff, #5a52d5);
+    border: none;
+    border-radius: 12px;
+    padding: 14px 22px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+
+  .btn-shorten:hover { opacity: 0.9; }
+  .btn-shorten:active { transform: scale(0.97); }
+  .btn-shorten:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .result-box {
+    display: none;
+    background: rgba(108, 99, 255, 0.08);
+    border: 1px solid rgba(108, 99, 255, 0.2);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+
+  .result-label {
+    font-size: 11px;
+    color: #6c63ff;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .result-url-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .result-url {
+    flex: 1;
+    font-size: 1rem;
+    color: #00d4ff;
+    word-break: break-all;
+    font-weight: 500;
+  }
+
+  .btn-copy {
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 12px;
+    color: #00d4ff;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-copy:hover { background: rgba(0, 212, 255, 0.2); }
+
+  .stats-section { margin-top: 1.5rem; }
+  .section-title {
+    font-size: 13px;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+  }
+
+  .stats-input-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-stats {
+    background: rgba(0, 212, 255, 0.08);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 0.9rem;
+    color: #00d4ff;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .btn-stats:hover { background: rgba(0, 212, 255, 0.15); }
+
+  .stats-result {
+    display: none;
+    margin-top: 1rem;
+    display: none;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 1rem;
+  }
+
+  .stat-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .stat-value.highlight { color: #6c63ff; }
+  .stat-label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .error-msg {
+    font-size: 13px;
+    color: #ff6b6b;
+    margin-top: 8px;
+    display: none;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1a1a2e;
+    border: 1px solid rgba(108,99,255,0.3);
+    border-radius: 50px;
+    padding: 10px 22px;
+    font-size: 13px;
+    color: #a89fff;
+    transition: transform 0.3s ease;
+    z-index: 100;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .footer {
+    text-align: center;
+    font-size: 12px;
+    color: #333;
+    margin-top: 1rem;
+  }
+
+  .footer span { color: #6c63ff; }
+</style>
+</head>
+<body>
+
+<div class="bg-glow glow1"></div>
+<div class="bg-glow glow2"></div>
+
+<div class="container">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      <span>CodeAlpha Internship — Task 1</span>
+    </div>
+    <h1>Shorten Your <span>URLs</span></h1>
+    <p class="subtitle">Paste your long URL below and get a clean, shareable short link instantly.</p>
+  </div>
+
+  <div class="card">
+    <div class="input-group">
+      <input type="text" id="longUrl" placeholder="https://your-very-long-url.com/goes/here..." />
+      <button class="btn-shorten" id="shortenBtn" onclick="shortenUrl()">Shorten</button>
+    </div>
+    <div class="error-msg" id="errorMsg">Please enter a valid URL.</div>
+
+    <div class="result-box" id="resultBox">
+      <div class="result-label">Your short link is ready</div>
+      <div class="result-url-row">
+        <span class="result-url" id="shortUrlDisplay"></span>
+        <button class="btn-copy" onclick="copyUrl()">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Check URL Stats</div>
+    <div class="stats-input-row">
+      <input type="text" id="statsCode" placeholder="Enter short code (e.g. ab3xZ9)" />
+      <button class="btn-stats" onclick="getStats()">Get Stats</button>
+    </div>
+    <div class="stats-result" id="statsResult">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value highlight" id="statClicks">0</div>
+          <div class="stat-label">Total Clicks</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statCode" style="font-size:1rem;">—</div>
+          <div class="stat-label">Short Code</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statDate" style="font-size:0.85rem;">—</div>
+          <div class="stat-label">Created</div>
+        </div>
+      </div>
+      <div style="margin-top:10px; padding:10px 14px; background:rgba(255,255,255,0.03); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
+        <div style="font-size:11px; color:#555; margin-bottom:4px;">ORIGINAL URL</div>
+        <div id="statOriginal" style="font-size:13px; color:#888; word-break:break-all;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Built with Express.js + MongoDB &nbsp;·&nbsp; <span>@CodeAlpha</span> Internship 2026</div>
+</div>
+
+<div class="toast" id="toast">Copied to clipboard!</div>
+
+<script>
+const BASE_URL = 'http://localhost:5000';
+
+function isValidUrl(str) {
+  try { new URL(str); return true; } catch { return false; }
+}
+
+async function shortenUrl() {
+  const input = document.getElementById('longUrl').value.trim();
+  const errorMsg = document.getElementById('errorMsg');
+  const resultBox = document.getElementById('resultBox');
+  const btn = document.getElementById('shortenBtn');
+
+  errorMsg.style.display = 'none';
+  resultBox.style.display = 'none';
+
+  if (!input || !isValidUrl(input)) {
+    errorMsg.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Shortening...';
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/shorten`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ originalUrl: input })
+    });
+    const data = await res.json();
+
+    if (data.shortUrl) {
+      document.getElementById('shortUrlDisplay').textContent = data.shortUrl;
+      resultBox.style.display = 'block';
+    } else {
+      errorMsg.textContent = data.error || 'Something went wrong.';
+      errorMsg.style.display = 'block';
+    }
+  } catch (e) {
+    errorMsg.textContent = 'Cannot connect to server. Make sure your backend is running.';
+    errorMsg.style.display = 'block';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Shorten';
+}
+
+async function getStats() {
+  const code = document.getElementById('statsCode').value.trim();
+  const statsResult = document.getElementById('statsResult');
+  if (!code) return;
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/stats/${code}`);
+    const data = await res.json();
+    if (data.shortCode) {
+      document.getElementById('statClicks').textContent = data.clicks;
+      document.getElementById('statCode').textContent = data.shortCode;
+      document.getElementById('statDate').textContent = new Date(data.createdAt).toLocaleDateString();
+      document.getElementById('statOriginal').textContent = data.originalUrl;
+      statsResult.style.display = 'block';
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function copyUrl() {
+  const url = document.getElementById('shortUrlDisplay').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  });
+}
+
+document.getElementById('longUrl').addEventListener('keypress', e => {
+  if (e.key === 'Enter') shortenUrl();
+});
+</script>
+</body>
+</html>
