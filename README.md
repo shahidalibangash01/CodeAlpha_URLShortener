@@ -182,4 +182,4 @@ This project was built as part of the **CodeAlpha Backend Development Internship
 
 ## License
  
-This project is licensed under the MIT License.
+This project was built as part of the CodeAlpha Backend Development Internship.
